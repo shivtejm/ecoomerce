@@ -1,0 +1,182 @@
+<div class="store-container">
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-popup" *ngIf="toastMessage">
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- STORE HEADER -->
+  <div class="store-header">
+    <div class="store-title-group">
+      <h1>Product Catalog</h1>
+      <p>Browse products by categories or search directly.</p>
+    </div>
+
+  </div>
+
+  <!-- CATEGORY HIERARCHY BAR -->
+  <div class="category-hierarchy-wrapper">
+
+    <!-- LEVEL 1: TOP-LEVEL CATEGORIES -->
+    <div class="category-tier tier-top">
+      <span class="tier-label">Categories:</span>
+      <div class="pill-scroll">
+        <button
+          class="cat-pill top-pill"
+          [class.active]="selectedTopCategory === null"
+          (click)="clearCategoryFilter()"
+        >
+          All Products
+        </button>
+
+        <button
+          *ngFor="let top of categoryTree"
+          class="cat-pill top-pill"
+          [class.active]="selectedTopCategory?.id === top.id"
+          (click)="selectTopCategory(top)"
+        >
+          {{ top.name }}
+        </button>
+      </div>
+    </div>
+
+    <!-- LEVEL 2: PARENT CATEGORIES -->
+    <div class="category-tier tier-parent" *ngIf="selectedTopCategory && (selectedTopCategory.subCategories?.length || 0) > 0">
+      <span class="tier-label">Subcategories:</span>
+      <div class="pill-scroll">
+        <button
+          *ngFor="let parent of selectedTopCategory.subCategories"
+          class="cat-pill parent-pill"
+          [class.active]="selectedParentCategory?.id === parent.id"
+          (click)="selectParentCategory(parent)"
+        >
+          {{ parent.name }}
+        </button>
+      </div>
+    </div>
+
+    <!-- LEVEL 3: CHILD CATEGORIES -->
+    <div class="category-tier tier-child" *ngIf="selectedParentCategory && (selectedParentCategory.subCategories?.length || 0) > 0">
+      <span class="tier-label">Specifics:</span>
+      <div class="pill-scroll">
+        <button
+          *ngFor="let child of selectedParentCategory.subCategories"
+          class="cat-pill child-pill"
+          [class.active]="selectedChildCategory?.id === child.id"
+          (click)="selectChildCategory(child)"
+        >
+          {{ child.name }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BREADCRUMB TRAIL -->
+  <div class="breadcrumb-trail">
+    <span class="crumb-link" (click)="clearCategoryFilter()">Store</span>
+    <span class="separator">/</span>
+
+    <ng-container *ngIf="selectedTopCategory">
+      <span class="crumb-link" (click)="selectTopCategory(selectedTopCategory)">{{ selectedTopCategory.name }}</span>
+      <span class="separator">/</span>
+    </ng-container>
+
+    <ng-container *ngIf="selectedParentCategory">
+      <span class="crumb-link" (click)="selectParentCategory(selectedParentCategory)">{{ selectedParentCategory.name }}</span>
+      <span class="separator">/</span>
+    </ng-container>
+
+    <ng-container *ngIf="selectedChildCategory">
+      <span class="crumb-active">{{ selectedChildCategory.name }}</span>
+    </ng-container>
+
+    <ng-container *ngIf="!selectedTopCategory">
+      <span class="crumb-active">All Products</span>
+    </ng-container>
+
+    <button
+      *ngIf="selectedTopCategory"
+      class="reset-filter-btn"
+      (click)="clearCategoryFilter()"
+    >
+      Clear Filter ✕
+    </button>
+  </div>
+
+  <!-- LOADING SPINNER -->
+  <div class="loading-state" *ngIf="isLoadingProducts">
+    <div class="spinner"></div>
+    <p>Loading products...</p>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div class="empty-state" *ngIf="!isLoadingProducts && errorMessage">
+    <h3>Failed to Load Products</h3>
+    <p>{{ errorMessage }}</p>
+    <button class="reset-filter-btn" (click)="loadProducts()">
+      Try Again
+    </button>
+  </div>
+
+  <!-- PRODUCT GRID -->
+  <div class="product-grid" *ngIf="!isLoadingProducts && !errorMessage && filteredProducts.length > 0">
+    <div
+      class="product-card"
+      *ngFor="let product of filteredProducts"
+      (click)="viewProduct(product.id)"
+    >
+      <div class="card-image-box">
+        <img [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+        <span class="category-badge">{{ product.categoryName }}</span>
+        <span class="stock-badge" [class.low-stock]="product.stockQuantity < 15">
+          {{ product.stockQuantity > 0 ? (product.stockQuantity + ' in stock') : 'Out of stock' }}
+        </span>
+      </div>
+
+      <div class="card-body">
+        <h3 class="product-name" [title]="product.name">{{ product.name }}</h3>
+        <p class="product-desc">{{ product.description }}</p>
+
+        <div class="card-footer">
+          <div class="price-row">
+            <div class="price-box">
+              <span class="price-symbol">₹</span>
+              <span class="price-val">{{ product.price | number:'1.2-2' }}</span>
+            </div>
+            <span class="delivery-tag">Free Delivery</span>
+          </div>
+
+          <div class="card-actions">
+            <button
+              class="quick-add-btn"
+              (click)="addToCart(product, $event)"
+              title="Add to cart"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+              <span>Add to Cart</span>
+            </button>
+            <button class="details-btn" (click)="viewProduct(product.id); $event.stopPropagation()">
+              Details
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-state" *ngIf="!isLoadingProducts && !errorMessage && filteredProducts.length === 0">
+    <h3>No Products Found</h3>
+    <p *ngIf="searchTerm">No products match "{{ searchTerm }}". Try adjusting your search query.</p>
+    <p *ngIf="!searchTerm">No products found in this selected category.</p>
+    <button class="reset-filter-btn" (click)="clearCategoryFilter()">
+      Show All Products
+    </button>
+  </div>
+
+</div>

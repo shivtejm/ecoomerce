@@ -18,6 +18,7 @@ export class Profile implements OnInit {
 
   userName = '';
   userEmail = '';
+  userRole = '';
 
   isLoading = true;
   errorMessage = '';
@@ -43,6 +44,7 @@ export class Profile implements OnInit {
         this.ngZone.run(() => {
           this.userName = user.name;
           this.userEmail = user.email;
+          this.userRole = user.role || 'ROLE_USER';
           this.isLoading = false;
           this.cdr.detectChanges();
         });

@@ -53,7 +53,12 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/login", "/register", "/logout").permitAll()
+                        .requestMatchers("/login", "/register", "/logout", "/forgot-password", "/reset-password", "/validate-reset-token").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories", "/api/categories/**", "/api/products", "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/products", "/api/products/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/products", "/api/products/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/products", "/api/products/**").authenticated()
+                        .requestMatchers("/api/admin/**").authenticated()
                         .anyRequest().authenticated()
                 )
 

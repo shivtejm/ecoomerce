@@ -1,82 +1,64 @@
 <div class="profile-container">
 
   <div class="profile-heading">
-
     <h1>My Profile</h1>
-
-    <p>
-      View your account information.
-    </p>
-
+    <p>View and manage your account information.</p>
   </div>
-
 
   <div class="profile-card">
 
     @if (isLoading) {
-
-      <p>Loading profile...</p>
-
+      <div class="loading-state">
+        <p>Loading profile...</p>
+      </div>
     }
 
     @else if (errorMessage) {
-
       <div class="error-message">
         {{ errorMessage }}
       </div>
-
     }
 
     @else {
 
       <div class="profile-header">
-
         <div class="profile-avatar">
-          {{ userName.charAt(0).toUpperCase() }}
+          {{ userName ? userName.charAt(0).toUpperCase() : 'U' }}
+        </div>
+        <div class="profile-header-info">
+          <h2>{{ userName }}</h2>
+          <span class="role-chip" [class.admin-chip]="userRole === 'ROLE_ADMIN'">
+            {{ userRole === 'ROLE_ADMIN' ? 'Administrator' : 'Customer Account' }}
+          </span>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="profile-details-stack">
+
+        <div class="detail-group">
+          <label class="detail-label">Full Name</label>
+          <div class="detail-value">{{ userName }}</div>
         </div>
 
-        <div class="profile-name">
+        <div class="detail-group">
+          <label class="detail-label">Email Address</label>
+          <div class="detail-value">{{ userEmail }}</div>
+        </div>
 
-          <h2>
-            {{ userName }}
-          </h2>
-
-          <p>
-            Account Information
-          </p>
-
+        <div class="detail-group">
+          <label class="detail-label">Account Role</label>
+          <div class="detail-value">{{ userRole === 'ROLE_ADMIN' ? 'Administrator' : 'Customer' }}</div>
         </div>
 
       </div>
 
-
-      <hr>
-
-
-      <div class="profile-information">
-
-        <div class="information-item">
-
-          <span class="label">
-            Email
-          </span>
-
-          <span class="value">
-            {{ userEmail }}
-          </span>
-
-        </div>
-
+      <div class="profile-actions">
+        <button class="logout-button" (click)="logout()">
+          Logout
+        </button>
       </div>
-
-
-      <button
-        class="logout-button"
-        (click)="logout()">
-
-        Logout
-
-      </button>
 
     }
 

@@ -1,0 +1,180 @@
+<div class="product-page-container">
+
+  <!-- TOP NAV & BREADCRUMBS -->
+  <div class="top-nav-bar">
+    <button class="back-btn" (click)="goBack()">
+      &larr; Back to Store
+    </button>
+
+    <div class="breadcrumbs" *ngIf="product && product.breadcrumb">
+      <span class="crumb-link" (click)="goBack()">Store</span>
+      <span class="sep">/</span>
+      <ng-container *ngFor="let crumb of product.breadcrumb; let last = last">
+        <span [class.active-crumb]="last" [class.crumb-link]="!last" (click)="!last ? goBack() : null">
+          {{ crumb }}
+        </span>
+        <span class="sep" *ngIf="!last">/</span>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- LOADING SPINNER -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading product details...</p>
+  </div>
+
+  <!-- PRODUCT NOT FOUND -->
+  <div class="empty-state" *ngIf="!isLoading && !product">
+    <h2>Product Not Found</h2>
+    <p>The product you are looking for does not exist or has been removed.</p>
+    <button class="primary-btn" (click)="goBack()">Return to Store</button>
+  </div>
+
+  <!-- PRODUCT DETAIL CONTENT -->
+  <div class="product-layout" *ngIf="!isLoading && product">
+
+    <!-- LEFT: IMAGE GALLERY -->
+    <div class="image-column">
+      <div class="image-wrapper">
+        <img [src]="product.imageUrl" [alt]="product.name" />
+      </div>
+    </div>
+
+    <!-- RIGHT: PRODUCT INFO -->
+    <div class="info-column">
+
+      <div class="badge-row">
+        <span class="category-tag">{{ product.categoryName }}</span>
+        <span class="stock-pill" [class.low-stock]="product.stockQuantity < 15">
+          {{ product.stockQuantity > 0 ? (product.stockQuantity + ' in stock') : 'Out of stock' }}
+        </span>
+      </div>
+
+      <h1 class="product-title">{{ product.name }}</h1>
+
+      <div class="price-section">
+        <span class="currency">₹</span>
+        <span class="price-amount">{{ product.price | number:'1.2-2' }}</span>
+        <span class="tax-info">Taxes included. Free delivery on orders over ₹499.</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="description-section">
+        <h3>Product Overview</h3>
+        <p>{{ product.description }}</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- PURCHASE ACTIONS -->
+      <div class="actions-section">
+        <div class="quantity-selector">
+          <label>Quantity</label>
+          <div class="qty-control">
+            <button (click)="decrementQuantity()" [disabled]="quantity <= 1">-</button>
+            <span>{{ quantity }}</span>
+            <button (click)="incrementQuantity()" [disabled]="quantity >= product.stockQuantity">+</button>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button
+            class="buy-now-btn"
+            [disabled]="product.stockQuantity <= 0 || isProcessingPayment"
+            (click)="buyNowWithRazorpay()"
+          >
+            <span *ngIf="!isProcessingPayment">Buy Now</span>
+            <span *ngIf="isProcessingPayment">Processing...</span>
+          </button>
+
+          <button
+            class="add-to-cart-btn"
+            [disabled]="product.stockQuantity <= 0 || isProcessingPayment"
+            (click)="addToCart()"
+          >
+            Add to Cart
+          </button>
+        </div>
+      </div>
+
+      <div class="payment-error-banner" *ngIf="paymentErrorMessage">
+        {{ paymentErrorMessage }}
+      </div>
+
+      <div class="success-banner" *ngIf="addedToCart">
+        Added {{ quantity }} item(s) to your cart.
+      </div>
+
+      <div class="login-alert" *ngIf="loginRequired">
+        <span>Please log in to complete your purchase.</span>
+        <button class="login-now-btn" (click)="goToLogin()">Login / Register</button>
+      </div>
+
+      <!-- TRUST HIGHLIGHTS -->
+      <div class="trust-features">
+        <div class="trust-item">
+          <div>
+            <strong>Fast Delivery</strong>
+            <small>Dispatch within 24 hours</small>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div>
+            <strong>Verified Genuine</strong>
+            <small>100% authentic merchandise</small>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div>
+            <strong>Easy Returns</strong>
+            <small>Hassle-free 30-day return policy</small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- PAYMENT SUCCESS RECEIPT MODAL -->
+  <div class="modal-backdrop" *ngIf="paymentSuccessOrder">
+    <div class="modal-card">
+      <h2>Payment Successful</h2>
+      <p class="modal-subtitle">Your transaction has been verified and completed successfully.</p>
+
+      <div class="receipt-box">
+        <div class="receipt-row">
+          <span>Product:</span>
+          <strong>{{ paymentSuccessOrder.productName }}</strong>
+        </div>
+        <div class="receipt-row">
+          <span>Quantity:</span>
+          <strong>{{ paymentSuccessOrder.quantity }} unit(s)</strong>
+        </div>
+        <div class="receipt-row">
+          <span>Amount Paid:</span>
+          <strong class="receipt-price">₹{{ paymentSuccessOrder.amount | number:'1.2-2' }}</strong>
+        </div>
+        <div class="receipt-row">
+          <span>Payment ID:</span>
+          <code>{{ paymentSuccessOrder.razorpayPaymentId }}</code>
+        </div>
+        <div class="receipt-row">
+          <span>Order ID:</span>
+          <code>{{ paymentSuccessOrder.razorpayOrderId }}</code>
+        </div>
+        <div class="receipt-row">
+          <span>Status:</span>
+          <span class="status-badge-paid">{{ paymentSuccessOrder.status }}</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="primary-modal-btn" (click)="closePaymentSuccessModal()">Continue Shopping</button>
+      </div>
+    </div>
+  </div>
+
+</div>

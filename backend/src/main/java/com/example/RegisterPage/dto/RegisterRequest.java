@@ -40,4 +40,14 @@ public class RegisterRequest {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    private String adminCode;
+
+    public String getAdminCode() {
+        return adminCode;
+    }
+
+    public void setAdminCode(String adminCode) {
+        this.adminCode = adminCode;
+    }
 }

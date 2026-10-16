@@ -1,26 +1,184 @@
 <mat-toolbar color="primary">
 
-  <span class="app-title" (click)="goToDashboard()">ShivApp</span>
+  <span class="app-title" (click)="goToDashboard()">ParaX</span>
+
+  <!-- GLOBAL SEARCH BAR (ONLY SEARCH BAR IN APPLICATION) -->
+  <div class="toolbar-search">
+    <svg class="toolbar-search-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input
+      type="text"
+      placeholder="Search products..."
+      [(ngModel)]="globalSearchTerm"
+      (keydown.enter)="onGlobalSearch()"
+    />
+    <button *ngIf="globalSearchTerm" class="toolbar-search-clear" (click)="clearGlobalSearch()" title="Clear">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <button class="toolbar-search-btn" (click)="onGlobalSearch()" title="Search">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    </button>
+  </div>
 
   <span class="spacer"></span>
 
-  <button mat-button (click)="goToDashboard()">
-    Dashboard
+  <button mat-button (click)="goToDashboard()">Dashboard</button>
+  <button mat-button (click)="goToStore()">Store</button>
+
+  @if (isAdmin) {
+    <button mat-button class="toolbar-admin-btn" (click)="goToAdmin()">Admin Panel</button>
+  }
+
+  <!-- CART BUTTON (RIGHT ASIDE PROFILE) -->
+  <button mat-button class="toolbar-cart-btn" (click)="openCart()" title="View Shopping Cart">
+    Cart
+    <span class="toolbar-cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
   </button>
 
-  <button mat-button (click)="goToProfile()">
-    Profile
-  </button>
-
-  <button mat-button class="toolbar-logout-btn" (click)="logout()">
-    Logout
-  </button>
+  @if (isLoggedIn) {
+    <button mat-button class="toolbar-profile-btn" (click)="goToProfile()" [title]="userName || 'Profile'">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </button>
+  } @else {
+    <button mat-button class="toolbar-login-btn" (click)="goToLogin()">Login / Register</button>
+  }
 
 </mat-toolbar>
 
-
 <div class="page-container">
-
   <router-outlet></router-outlet>
+</div>
 
+<!-- SLIDE-OVER SHOPPING CART DRAWER -->
+<div class="cart-backdrop" *ngIf="isCartOpen" (click)="closeCart()"></div>
+
+<div class="cart-drawer" [class.open]="isCartOpen">
+
+  <div class="cart-drawer-header">
+    <div class="cart-title-wrapper">
+      <h3 class="cart-title">Shopping Cart</h3>
+      <span class="cart-badge-count" *ngIf="cartCount > 0">{{ cartCount }}</span>
+    </div>
+    <button class="cart-close-btn" (click)="closeCart()" title="Close Cart">✕</button>
+  </div>
+
+  <div class="cart-drawer-body">
+    <!-- Empty State -->
+    <div class="cart-empty-box" *ngIf="cartItems.length === 0">
+      <h4>Your cart is empty</h4>
+      <p>Explore our store and add products to your cart.</p>
+      <button class="start-shopping-btn" (click)="goToStore(); closeCart()">Browse Products</button>
+    </div>
+
+    <!-- Items List -->
+    <div class="cart-items-list" *ngIf="cartItems.length > 0">
+      <div class="cart-item-card" *ngFor="let item of cartItems">
+        <img [src]="item.product.imageUrl || 'assets/images/image1.png'" [alt]="item.product.name" class="cart-item-image" />
+        
+        <div class="cart-item-details">
+          <h4 class="cart-item-name">{{ item.product.name }}</h4>
+          <div class="cart-item-unit-price">₹{{ item.product.price | number:'1.2-2' }}</div>
+          
+          <div class="cart-item-controls">
+            <div class="cart-qty-stepper">
+              <button (click)="updateCartQuantity(item.product.id, item.quantity - 1)" [disabled]="item.quantity <= 1">-</button>
+              <span>{{ item.quantity }}</span>
+              <button (click)="updateCartQuantity(item.product.id, item.quantity + 1)" [disabled]="item.quantity >= item.product.stockQuantity">+</button>
+            </div>
+            
+            <button class="cart-remove-icon-btn" (click)="removeCartItem(item.product.id)" title="Remove item">
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <div class="cart-item-row-total">
+          ₹{{ (item.product.price * item.quantity) | number:'1.2-2' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="cart-drawer-footer" *ngIf="cartItems.length > 0">
+    <div class="cart-error-banner" *ngIf="checkoutErrorMessage">
+      {{ checkoutErrorMessage }}
+    </div>
+
+    <div class="cart-summary-line">
+      <span>Subtotal ({{ cartCount }} items):</span>
+      <strong>₹{{ cartSubtotal | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="cart-summary-line">
+      <span>Delivery:</span>
+      <span class="free-shipping-tag">FREE</span>
+    </div>
+
+    <div class="cart-total-line">
+      <span>Total:</span>
+      <span class="cart-final-price">₹{{ cartSubtotal | number:'1.2-2' }}</span>
+    </div>
+
+    <button
+      class="cart-checkout-button"
+      [disabled]="isProcessingCheckout"
+      (click)="checkoutCartWithRazorpay()"
+    >
+      <span *ngIf="!isProcessingCheckout">Buy Now (₹{{ cartSubtotal | number:'1.2-2' }})</span>
+      <span *ngIf="isProcessingCheckout">Processing...</span>
+    </button>
+
+    <div class="cart-footer-links">
+      <button class="clear-cart-text-btn" (click)="clearCart()">Clear Cart</button>
+      <button class="keep-shopping-btn" (click)="closeCart()">Continue Shopping</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- CART CHECKOUT SUCCESS RECEIPT MODAL -->
+<div class="checkout-modal-backdrop" *ngIf="checkoutSuccessData">
+  <div class="checkout-modal-card">
+    <h2>Payment Successful</h2>
+    <p class="checkout-modal-subtitle">Your cart order has been verified and placed successfully.</p>
+
+    <div class="checkout-receipt-box">
+      <div class="receipt-row">
+        <span>Payment ID:</span>
+        <code>{{ checkoutSuccessData.paymentId }}</code>
+      </div>
+      <div class="receipt-row">
+        <span>Order ID:</span>
+        <code>{{ checkoutSuccessData.orderId }}</code>
+      </div>
+      <div class="receipt-row">
+        <span>Items:</span>
+        <strong>{{ checkoutSuccessData.itemCount }} item(s)</strong>
+      </div>
+      <div class="receipt-row">
+        <span>Total Paid:</span>
+        <strong class="receipt-price">₹{{ checkoutSuccessData.totalPaid | number:'1.2-2' }}</strong>
+      </div>
+      <div class="receipt-row">
+        <span>Status:</span>
+        <span class="status-badge-paid">PAID</span>
+      </div>
+    </div>
+
+    <div class="checkout-modal-actions">
+      <button class="primary-modal-btn" (click)="closeCheckoutSuccessModal()">Back to Store</button>
+    </div>
+  </div>
 </div>

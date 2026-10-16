@@ -1,8 +1,10 @@
 package com.example.RegisterPage.controller;
 
+import com.example.RegisterPage.dto.ForgotPasswordRequest;
 import com.example.RegisterPage.dto.LoginRequest;
 import com.example.RegisterPage.dto.ProfileResponse;
 import com.example.RegisterPage.dto.RegisterRequest;
+import com.example.RegisterPage.dto.ResetPasswordRequest;
 import com.example.RegisterPage.entity.User;
 import com.example.RegisterPage.service.AuthService;
 import com.example.RegisterPage.service.JwtService;
@@ -70,7 +72,9 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
                 "message", "Login successful",
                 "email", user.getEmail(),
-                "name", user.getName()
+                "name", user.getName(),
+                "role", user.getRole() != null ? user.getRole() : "ROLE_USER",
+                "token", token
         ));
     }
 
@@ -100,7 +104,39 @@ public class AuthController {
 
         return ResponseEntity.ok(new ProfileResponse(
                 user.getName(),
-                user.getEmail()
+                user.getEmail(),
+                user.getRole() != null ? user.getRole() : "ROLE_USER"
         ));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request,
+                                           @RequestHeader(value = "Origin", required = false) String origin) {
+        String frontendUrl = (origin != null && !origin.isBlank()) ? origin : "http://localhost:4200";
+        authService.processForgotPassword(request.getEmail(), frontendUrl);
+        return ResponseEntity.ok(Map.of(
+                "message", "If an account exists with that email, a password reset link has been sent."
+        ));
+    }
+
+    @GetMapping("/validate-reset-token")
+    public ResponseEntity<?> validateResetToken(@RequestParam("token") String token) {
+        boolean valid = authService.validateResetToken(token);
+        if (valid) {
+            return ResponseEntity.ok(Map.of("valid", true, "message", "Token is valid"));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("valid", false, "message", "Reset link is invalid or has expired"));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        String result = authService.resetPassword(request.getToken(), request.getNewPassword());
+        if ("Password successfully reset".equals(result)) {
+            return ResponseEntity.ok(Map.of("message", "Password has been reset successfully. You can now log in."));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", result));
+        }
     }
 }

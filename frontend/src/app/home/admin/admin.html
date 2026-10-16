@@ -1,0 +1,333 @@
+<div class="admin-container">
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-popup" *ngIf="toastMessage">
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- ADMIN HEADER -->
+  <div class="admin-header">
+    <div class="header-left">
+      <h1>Store Administration Panel</h1>
+      <p>Manage store products, catalog categories, and authorized store administrators.</p>
+    </div>
+    <div class="admin-badge">
+      <span class="shield-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      </span>
+      <div>
+        <small>Active Administrator</small>
+        <strong>{{ currentAdminEmail }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div class="admin-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'products'"
+      (click)="switchTab('products')"
+    >
+      Product Catalog & Inventory
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'users'"
+      (click)="switchTab('users')"
+    >
+      Admin & User Access Control
+    </button>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- TAB 1: PRODUCT CATALOG MANAGEMENT              -->
+  <!-- ============================================== -->
+  <div class="tab-content" *ngIf="activeTab === 'products'">
+
+    <!-- PRODUCT CREATION / EDIT FORM -->
+    <div class="card form-card">
+      <div class="form-header">
+        <h2>{{ isEditing ? 'Edit Product' : 'Add New Product' }}</h2>
+        <span class="owner-notice">
+          Products you add will be linked to your admin account ({{ currentAdminEmail }}). Only you will be able to edit or delete them.
+        </span>
+      </div>
+
+      <div class="error-banner" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <div class="form-grid">
+
+        <!-- CASCADING CATEGORY SELECTORS (3 TIERS) -->
+        <div class="form-full-row">
+          <label class="section-label">Select Category Hierarchy *</label>
+          <div class="cascade-row">
+
+            <!-- 1. Top Level -->
+            <div class="cascade-col">
+              <label>1. Top Category</label>
+              <select [(ngModel)]="selectedTopId" (change)="onTopCategoryChange()">
+                <option [ngValue]="null">-- Select Top Category --</option>
+                <option *ngFor="let top of categoryTree" [ngValue]="top.id">
+                  {{ top.name }}
+                </option>
+              </select>
+            </div>
+
+            <!-- 2. Parent Level -->
+            <div class="cascade-col">
+              <label>2. Parent Subcategory</label>
+              <select
+                [(ngModel)]="selectedParentId"
+                (change)="onParentCategoryChange()"
+                [disabled]="!selectedTopId"
+              >
+                <option [ngValue]="null">-- Select Subcategory --</option>
+                <option *ngFor="let parent of availableParents" [ngValue]="parent.id">
+                  {{ parent.name }}
+                </option>
+              </select>
+            </div>
+
+            <!-- 3. Child Level -->
+            <div class="cascade-col">
+              <label>3. Child Specific Category</label>
+              <select
+                [(ngModel)]="formProduct.categoryId"
+                [disabled]="!selectedParentId"
+              >
+                <option [ngValue]="undefined">-- Select Child Category --</option>
+                <option *ngFor="let child of availableChildren" [ngValue]="child.id">
+                  {{ child.name }}
+                </option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- PRODUCT DETAILS -->
+        <div class="form-group span-2">
+          <label>Product Name *</label>
+          <input
+            type="text"
+            [(ngModel)]="formProduct.name"
+            placeholder="e.g. Dell XPS 15 4K OLED Laptop"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Price (₹) *</label>
+          <input
+            type="number"
+            step="0.01"
+            [(ngModel)]="formProduct.price"
+            placeholder="1299.99"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Stock Quantity *</label>
+          <input
+            type="number"
+            [(ngModel)]="formProduct.stockQuantity"
+            placeholder="20"
+          />
+        </div>
+
+        <div class="form-group span-2">
+          <label>Image URL</label>
+          <input
+            type="text"
+            [(ngModel)]="formProduct.imageUrl"
+            placeholder="https://images.unsplash.com/..."
+          />
+          <small class="hint">Paste direct image URL or leave blank for a default placeholder.</small>
+        </div>
+
+        <div class="form-group span-2">
+          <label>Description & Specifications</label>
+          <textarea
+            rows="3"
+            [(ngModel)]="formProduct.description"
+            placeholder="Provide detailed product specifications and overview..."
+          ></textarea>
+        </div>
+
+      </div>
+
+      <!-- FORM ACTIONS -->
+      <div class="form-actions">
+        <button
+          *ngIf="isEditing"
+          class="btn-cancel"
+          (click)="cancelEdit()"
+        >
+          Cancel Edit
+        </button>
+        <button
+          class="btn-save"
+          [disabled]="isSaving"
+          (click)="saveProduct()"
+        >
+          {{ isSaving ? 'Saving...' : (isEditing ? 'Update Product' : 'Add to Catalog') }}
+        </button>
+      </div>
+
+    </div>
+
+    <!-- LIVE INVENTORY TABLE -->
+    <div class="card table-card">
+      <div class="table-header">
+        <h2>Live Products Inventory</h2>
+        <span class="count-badge">{{ products.length }} Total Products</span>
+      </div>
+
+      <div class="loading-state" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <p>Loading database inventory...</p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!isLoading && products.length > 0">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Product Details</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Created By</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let product of products" [class.owned-row]="product.canModify">
+              <td class="img-cell">
+                <img [src]="product.imageUrl" [alt]="product.name" />
+              </td>
+              <td class="name-cell">
+                <strong>{{ product.name }}</strong>
+                <small>{{ product.description | slice:0:60 }}...</small>
+              </td>
+              <td>
+                <span class="cat-tag">{{ product.categoryName }}</span>
+              </td>
+              <td class="price-cell">
+                ₹{{ product.price | number:'1.2-2' }}
+              </td>
+              <td>
+                <span class="stock-tag" [class.out-of-stock]="product.stockQuantity <= 0">
+                  {{ product.stockQuantity }} in stock
+                </span>
+              </td>
+              <td class="creator-cell">
+                <span *ngIf="product.createdByEmail" class="creator-badge" [class.is-me]="product.canModify">
+                  {{ product.createdByEmail }}
+                  <em *ngIf="product.canModify"> (You)</em>
+                </span>
+                <span *ngIf="!product.createdByEmail" class="system-badge">System Demo</span>
+              </td>
+              <td class="text-right actions-cell">
+                <!-- If THIS admin created the product, allow edit and delete -->
+                <ng-container *ngIf="product.canModify">
+                  <button class="btn-action edit" (click)="editProduct(product)" title="Edit product">
+                    Edit
+                  </button>
+                  <button class="btn-action delete" (click)="deleteProduct(product)" title="Delete product">
+                    Delete
+                  </button>
+                </ng-container>
+
+                <!-- If ANOTHER admin created the product, lock it -->
+                <ng-container *ngIf="!product.canModify">
+                  <span class="locked-badge" title="Only the creator admin can modify this product">
+                    Read-Only
+                  </span>
+                </ng-container>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" *ngIf="!isLoading && products.length === 0">
+        <p>No products in the database. Use the form above to add your first product!</p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ============================================== -->
+  <!-- TAB 2: MULTI-ADMIN & USER ACCESS MANAGEMENT    -->
+  <!-- ============================================== -->
+  <div class="tab-content" *ngIf="activeTab === 'users'">
+
+    <div class="card table-card">
+      <div class="table-header">
+        <h2>Admin & Registered User Accounts</h2>
+        <span class="count-badge">{{ users.length }} Registered Accounts</span>
+      </div>
+
+      <div class="loading-state" *ngIf="isLoadingUsers">
+        <div class="spinner"></div>
+        <p>Loading accounts...</p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!isLoadingUsers && users.length > 0">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Access Role</th>
+              <th class="text-right">Privilege Controls</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users">
+              <td>#{{ user.id }}</td>
+              <td><strong>{{ user.name }}</strong></td>
+              <td>{{ user.email }}</td>
+              <td>
+                <span class="role-badge" [class.admin-role]="user.role === 'ROLE_ADMIN'">
+                  {{ user.role === 'ROLE_ADMIN' ? 'Administrator' : 'Customer' }}
+                </span>
+              </td>
+              <td class="text-right actions-cell">
+                <button
+                  *ngIf="user.role !== 'ROLE_ADMIN'"
+                  class="btn-action promote"
+                  (click)="toggleUserRole(user)"
+                >
+                  Promote to Admin
+                </button>
+
+                <button
+                  *ngIf="user.role === 'ROLE_ADMIN' && user.email !== currentAdminEmail"
+                  class="btn-action demote"
+                  (click)="toggleUserRole(user)"
+                >
+                  Revoke Admin
+                </button>
+
+                <span *ngIf="user.email === currentAdminEmail" class="self-tag">
+                  (Current Account)
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

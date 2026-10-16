@@ -1,237 +1,110 @@
 <div class="auth-page">
-
   <div class="auth-card">
+    <!-- TABS (Login / Register) -->
+    @if (!isForgot) {
+      <div class="auth-tabs">
+        <button type="button" [class.active]="isLogin" (click)="showLogin()">Login</button>
+        <button type="button" [class.active]="!isLogin" (click)="showRegister()">Register</button>
+      </div>
+    }
 
-    <!-- ========================= -->
-    <!-- TABS -->
-    <!-- ========================= -->
-
-    <div class="auth-tabs">
-
-      <button
-        type="button"
-        [class.active]="isLogin"
-        (click)="showLogin()">
-
-        Login
-
-      </button>
-
-
-      <button
-        type="button"
-        [class.active]="!isLogin"
-        (click)="showRegister()">
-
-        Register
-
-      </button>
-
-    </div>
-
-
-    <!-- ========================= -->
     <!-- LOGIN -->
-    <!-- ========================= -->
-
-    @if (isLogin) {
-
+    @if (!isForgot && isLogin) {
       <h1>Login</h1>
-
-      <p class="subtitle">
-        Login to your account
-      </p>
-
+      <p class="subtitle">Login to your account</p>
 
       <form (ngSubmit)="login()">
-
-        <!-- Email -->
-
         <div class="form-group">
-
-          <label for="loginEmail">
-            Email
-          </label>
-
-          <input
-            id="loginEmail"
-            type="email"
-            name="loginEmail"
-            [(ngModel)]="loginEmail"
-            placeholder="Enter your email"
-            required
-          >
-
+          <label for="loginEmail">Email</label>
+          <input id="loginEmail" type="email" name="loginEmail" [(ngModel)]="loginEmail" placeholder="Enter your email" required>
         </div>
 
-
-        <!-- Password -->
-
         <div class="form-group">
-
-          <label for="loginPassword">
-            Password
-          </label>
-
-          <input
-            id="loginPassword"
-            type="password"
-            name="loginPassword"
-            [(ngModel)]="loginPassword"
-            placeholder="Enter your password"
-            required
-          >
-
+          <div class="form-group-header">
+            <label for="loginPassword">Password</label>
+            <button type="button" class="forgot-link" (click)="showForgotPassword()">Forgot password?</button>
+          </div>
+          <input id="loginPassword" type="password" name="loginPassword" [(ngModel)]="loginPassword" placeholder="Enter your password" required>
         </div>
-
 
         @if (errorMessage) {
-
-          <div class="error-message">
-            {{ errorMessage }}
-          </div>
-
+          <div class="error-message">{{ errorMessage }}</div>
         }
-
-
         @if (successMessage) {
-
-          <div class="success-message">
-            {{ successMessage }}
-          </div>
-
+          <div class="success-message">{{ successMessage }}</div>
         }
 
-
-        <button
-          type="submit"
-          class="auth-button"
-          [disabled]="isLoading">
-
-          @if (isLoading) {
-            Logging in...
-          } @else {
-            Login
-          }
-
+        <button type="submit" class="auth-button" [disabled]="isLoading">
+          {{ isLoading ? 'Logging in...' : 'Login' }}
         </button>
-
       </form>
-
     }
 
-
-    <!-- ========================= -->
     <!-- REGISTER -->
-    <!-- ========================= -->
-
-    @else {
-
+    @else if (!isForgot && !isLogin) {
       <h1>Create Account</h1>
-
-      <p class="subtitle">
-        Register a new account
-      </p>
-
+      <p class="subtitle">Register a new account</p>
 
       <form (ngSubmit)="register()">
-
-        <!-- Name -->
-
         <div class="form-group">
-
-          <label for="registerName">
-            Name
-          </label>
-
-          <input
-            id="registerName"
-            type="text"
-            name="registerName"
-            [(ngModel)]="registerName"
-            placeholder="Enter your name"
-            required
-          >
-
+          <label for="registerName">Name</label>
+          <input id="registerName" type="text" name="registerName" [(ngModel)]="registerName" placeholder="Enter your name" required>
         </div>
 
-
-        <!-- Email -->
-
         <div class="form-group">
-
-          <label for="registerEmail">
-            Email
-          </label>
-
-          <input
-            id="registerEmail"
-            type="email"
-            name="registerEmail"
-            [(ngModel)]="registerEmail"
-            placeholder="Enter your email"
-            required
-          >
-
+          <label for="registerEmail">Email</label>
+          <input id="registerEmail" type="email" name="registerEmail" [(ngModel)]="registerEmail" placeholder="Enter your email" required>
         </div>
 
-
-        <!-- Password -->
-
         <div class="form-group">
-
-          <label for="registerPassword">
-            Password
-          </label>
-
-          <input
-            id="registerPassword"
-            type="password"
-            name="registerPassword"
-            [(ngModel)]="registerPassword"
-            placeholder="Create a password"
-            required
-          >
-
+          <label for="registerPassword">Password</label>
+          <input id="registerPassword" type="password" name="registerPassword" [(ngModel)]="registerPassword" placeholder="Create a password" required>
         </div>
 
+        <div class="form-group">
+          <label for="registerAdminCode">Admin Invite Code (Optional)</label>
+          <input id="registerAdminCode" type="text" name="registerAdminCode" [(ngModel)]="registerAdminCode" placeholder="Enter admin invite code (e.g. ADMIN2026)">
+          <small style="color: #64748b; font-size: 0.75rem; margin-top: 4px; display: block;">
+            Leave empty for normal customer accounts.
+          </small>
+        </div>
 
         @if (errorMessage) {
-
-          <div class="error-message">
-            {{ errorMessage }}
-          </div>
-
+          <div class="error-message">{{ errorMessage }}</div>
         }
-
-
         @if (successMessage) {
-
-          <div class="success-message">
-            {{ successMessage }}
-          </div>
-
+          <div class="success-message">{{ successMessage }}</div>
         }
 
-
-        <button
-          type="submit"
-          class="auth-button"
-          [disabled]="isLoading">
-
-          @if (isLoading) {
-            Creating account...
-          } @else {
-            Register
-          }
-
+        <button type="submit" class="auth-button" [disabled]="isLoading">
+          {{ isLoading ? 'Creating account...' : 'Register' }}
         </button>
-
       </form>
-
     }
 
+    <!-- FORGOT PASSWORD -->
+    @else if (isForgot) {
+      <button type="button" class="back-link" (click)="showLogin()">← Back to Login</button>
+      <h1>Forgot Password</h1>
+      <p class="subtitle">Enter your email to receive a password reset link</p>
 
+      <form (ngSubmit)="forgotPassword()">
+        <div class="form-group">
+          <label for="forgotEmail">Registered Email</label>
+          <input id="forgotEmail" type="email" name="forgotEmail" [(ngModel)]="forgotEmail" placeholder="Enter your registered email" required>
+        </div>
+
+        @if (errorMessage) {
+          <div class="error-message">{{ errorMessage }}</div>
+        }
+        @if (successMessage) {
+          <div class="success-message">{{ successMessage }}</div>
+        }
+
+        <button type="submit" class="auth-button" [disabled]="isLoading">
+          {{ isLoading ? 'Sending Reset Link...' : 'Send Reset Link' }}
+        </button>
+      </form>
+    }
   </div>
-
 </div>

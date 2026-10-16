@@ -12,11 +12,13 @@ export interface AuthResponse {
   message: string;
   email?: string;
   name?: string;
+  role?: string;
 }
 
 export interface ProfileResponse {
   name: string;
   email: string;
+  role?: string;
 }
 
 @Injectable({
@@ -32,13 +34,23 @@ export class AuthService {
   private getStoredUser(): ProfileResponse | null {
     const email = localStorage.getItem('userEmail');
     const name = localStorage.getItem('userName') || '';
+    const role = localStorage.getItem('userRole') || 'ROLE_USER';
     if (email) {
-      return { name, email };
+      return { name, email, role };
     }
     return null;
   }
 
-  register(user: { name: string; email: string; password: string }): Observable<AuthResponse> {
+  isLoggedIn(): boolean {
+    return !!this.currentUser();
+  }
+
+  isAdmin(): boolean {
+    const user = this.currentUser();
+    return user?.role === 'ROLE_ADMIN';
+  }
+
+  register(user: { name: string; email: string; password: string; adminCode?: string }): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(
       `${this.apiUrl}/register`,
       user,
@@ -59,11 +71,13 @@ export class AuthService {
       tap((res) => {
         const user: ProfileResponse = {
           name: res.name || '',
-          email: res.email || credentials.email
+          email: res.email || credentials.email,
+          role: res.role || 'ROLE_USER'
         };
         this.currentUser.set(user);
         localStorage.setItem('userEmail', user.email);
         localStorage.setItem('userName', user.name);
+        localStorage.setItem('userRole', user.role || 'ROLE_USER');
         localStorage.setItem('isLoggedIn', 'true');
       })
     );
@@ -88,8 +102,10 @@ export class AuthService {
     this.currentUser.set(null);
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userName');
+    localStorage.removeItem('userRole');
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('token');
+    localStorage.removeItem('mart_user_cart');
   }
 
   getProfile(): Observable<ProfileResponse> {
@@ -110,5 +126,26 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return localStorage.getItem('isLoggedIn') === 'true' || !!localStorage.getItem('userEmail');
+  }
+
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/forgot-password`,
+      { email }
+    );
+  }
+
+  validateResetToken(token: string): Observable<{ valid: boolean; message: string }> {
+    return this.http.get<{ valid: boolean; message: string }>(
+      `${this.apiUrl}/validate-reset-token`,
+      { params: { token } }
+    );
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/reset-password`,
+      { token, newPassword }
+    );
   }
 }

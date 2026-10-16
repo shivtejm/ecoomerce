@@ -14,15 +14,20 @@ export class Auth {
 
   // Login/Register tab
   isLogin = true;
+  isForgot = false;
 
   // Login
   loginEmail = '';
   loginPassword = '';
 
+  // Forgot password
+  forgotEmail = '';
+
   // Register
   registerName = '';
   registerEmail = '';
   registerPassword = '';
+  registerAdminCode = '';
 
   // Messages
   errorMessage = '';
@@ -45,6 +50,7 @@ export class Auth {
   // =====================================
   showLogin(): void {
     this.isLogin = true;
+    this.isForgot = false;
     this.errorMessage = '';
     this.successMessage = '';
     this.isLoading = false;
@@ -55,9 +61,21 @@ export class Auth {
   // =====================================
   showRegister(): void {
     this.isLogin = false;
+    this.isForgot = false;
     this.errorMessage = '';
     this.successMessage = '';
     this.isLoading = false;
+  }
+
+  // =====================================
+  // SHOW FORGOT PASSWORD
+  // =====================================
+  showForgotPassword(): void {
+    this.isForgot = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.isLoading = false;
+    this.forgotEmail = this.loginEmail ? this.loginEmail.trim() : '';
   }
 
   // =====================================
@@ -152,11 +170,14 @@ export class Auth {
     this.isLoading = true;
     this.cdr.detectChanges();
 
-    this.authService.register({ name, email, password }).subscribe({
+    const adminCode = this.registerAdminCode.trim();
+    this.authService.register({ name, email, password, adminCode: adminCode ? adminCode : undefined }).subscribe({
       next: (response) => {
         this.ngZone.run(() => {
           this.isLoading = false;
-          this.successMessage = 'Registration successful! Please login.';
+          this.successMessage = adminCode === 'ADMIN2026'
+            ? 'Administrator account created successfully! Please login.'
+            : 'Registration successful! Please login.';
 
           // Switch to login tab and pre-fill email
           this.isLogin = true;
@@ -167,6 +188,7 @@ export class Auth {
           this.registerName = '';
           this.registerEmail = '';
           this.registerPassword = '';
+          this.registerAdminCode = '';
           this.cdr.detectChanges();
         });
       },
@@ -182,6 +204,50 @@ export class Auth {
             this.errorMessage = 'Cannot connect to backend. Make sure Spring Boot is running on port 8080.';
           } else {
             this.errorMessage = error.error?.message || 'Registration failed. Status: ' + error.status;
+          }
+          this.cdr.detectChanges();
+        });
+      }
+    });
+  }
+
+  // =====================================
+  // FORGOT PASSWORD
+  // =====================================
+  forgotPassword(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const email = this.forgotEmail.trim();
+
+    if (!email) {
+      this.errorMessage = 'Please enter your email address.';
+      return;
+    }
+
+    if (!this.emailRegex.test(email)) {
+      this.errorMessage = 'Please enter a valid email address.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.cdr.detectChanges();
+
+    this.authService.forgotPassword(email).subscribe({
+      next: (response) => {
+        this.ngZone.run(() => {
+          this.isLoading = false;
+          this.successMessage = response?.message || 'If this email is registered, a password reset link has been sent.';
+          this.cdr.detectChanges();
+        });
+      },
+      error: (error) => {
+        this.ngZone.run(() => {
+          this.isLoading = false;
+          if (error.status === 0) {
+            this.errorMessage = 'Cannot connect to backend. Make sure Spring Boot is running on port 8080.';
+          } else {
+            this.errorMessage = error.error?.message || 'Failed to process request. Please try again.';
           }
           this.cdr.detectChanges();
         });
