@@ -18,11 +18,6 @@ public class CategoryController {
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
     }
-
-    /**
-     * GET /api/categories/tree
-     * Returns Top-level categories, with their nested Parent categories and Child categories.
-     */
     @GetMapping("/tree")
     public ResponseEntity<List<CategoryDTO>> getCategoryTree() {
         return ResponseEntity.ok(categoryService.getCategoryTree());

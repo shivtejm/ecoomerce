@@ -1,12 +1,9 @@
+
 package com.example.RegisterPage.dto;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Data Transfer Object for Category with nested subcategories.
- * Avoids any cyclic references and provides a clean JSON representation.
- */
 public class CategoryDTO {
 
     private Long id;
@@ -14,17 +11,10 @@ public class CategoryDTO {
     private String slug;
     private Integer level;
     private Long parentId;
+
     private List<CategoryDTO> subCategories = new ArrayList<>();
 
     public CategoryDTO() {
-    }
-
-    public CategoryDTO(Long id, String name, String slug, Integer level, Long parentId) {
-        this.id = id;
-        this.name = name;
-        this.slug = slug;
-        this.level = level;
-        this.parentId = parentId;
     }
 
     public Long getId() {

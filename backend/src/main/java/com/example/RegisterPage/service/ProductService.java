@@ -59,6 +59,16 @@ public class ProductService {
                 .orElse(null);
     }
 
+    public static final String DEFAULT_PRODUCT_IMAGE = "https://placehold.co/400x400?text=No+Image";
+    private static final String OLD_WATCH_IMAGE_FRAGMENT = "photo-1523275335684-37898b6baf30";
+
+    private String sanitizeImageUrl(String url) {
+        if (url == null || url.trim().isEmpty() || url.contains(OLD_WATCH_IMAGE_FRAGMENT)) {
+            return DEFAULT_PRODUCT_IMAGE;
+        }
+        return url.trim();
+    }
+
     @Transactional
     public ProductDTO createProduct(ProductDTO dto, User creator) {
         Category category = null;
@@ -71,7 +81,7 @@ public class ProductService {
                 dto.getDescription(),
                 dto.getPrice(),
                 dto.getStockQuantity() != null ? dto.getStockQuantity() : 0,
-                dto.getImageUrl(),
+                sanitizeImageUrl(dto.getImageUrl()),
                 category,
                 creator
         );

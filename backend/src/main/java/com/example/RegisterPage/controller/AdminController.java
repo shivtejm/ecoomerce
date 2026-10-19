@@ -32,10 +32,6 @@ public class AdminController {
         return user;
     }
 
-    /**
-     * GET /api/admin/users
-     * Lists all users and their roles (Admin only).
-     */
     @GetMapping("/users")
     public ResponseEntity<?> getAllUsers(Authentication authentication) {
         User admin = getAuthenticatedAdmin(authentication);

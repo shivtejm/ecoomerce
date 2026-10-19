@@ -1,15 +1,18 @@
+
 package com.example.RegisterPage.service;
 
 import com.example.RegisterPage.dto.CategoryDTO;
 import com.example.RegisterPage.entity.Category;
 import com.example.RegisterPage.repository.CategoryRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 public class CategoryService {
@@ -21,52 +24,84 @@ public class CategoryService {
     }
 
     /**
-     * Builds and returns the hierarchical category tree starting from Top-level (Level 1)
-     * down to Parent categories (Level 2) and Child categories (Level 3).
+     * Fetch all categories and build the hierarchy:
+     * Level 1 -> Level 2 -> Level 3
      */
     @Transactional(readOnly = true)
     public List<CategoryDTO> getCategoryTree() {
-        List<Category> topLevelCategories = categoryRepository.findFullTree();
-        return topLevelCategories.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
 
-    /**
-     * Recursive converter from Entity to DTO to ensure clean JSON output.
-     */
-    public CategoryDTO convertToDTO(Category category) {
-        CategoryDTO dto = new CategoryDTO();
-        dto.setId(category.getId());
-        dto.setName(category.getName());
-        dto.setSlug(category.getSlug());
-        dto.setLevel(category.getLevel());
-        dto.setParentId(category.getParent() != null ? category.getParent().getId() : null);
+        // Fetch all categories without recursively fetching children.
+        List<Category> categories = categoryRepository.findAll();
 
-        if (category.getSubCategories() != null && !category.getSubCategories().isEmpty()) {
-            List<CategoryDTO> children = category.getSubCategories().stream()
-                    .map(this::convertToDTO)
-                    .collect(Collectors.toList());
-            dto.setSubCategories(children);
-        } else {
+        // Store one DTO per category ID.
+        Map<Long, CategoryDTO> dtoMap = new HashMap<>();
+
+        for (Category category : categories) {
+            CategoryDTO dto = new CategoryDTO();
+
+            dto.setId(category.getId());
+            dto.setName(category.getName());
+            dto.setSlug(category.getSlug());
+            dto.setLevel(category.getLevel());
+
+            dto.setParentId(
+                    category.getParent() != null
+                            ? category.getParent().getId()
+                            : null
+            );
+
+            // Every category starts with an empty child list.
             dto.setSubCategories(new ArrayList<>());
+
+            dtoMap.put(category.getId(), dto);
         }
 
-        return dto;
+        // Attach each category to its parent.
+        List<CategoryDTO> roots = new ArrayList<>();
+
+        for (Category category : categories) {
+
+            CategoryDTO currentDTO =
+                    dtoMap.get(category.getId());
+
+            if (category.getParent() == null) {
+
+                // No parent means this is a root category.
+                roots.add(currentDTO);
+
+            } else {
+
+                Long parentId = category.getParent().getId();
+
+                CategoryDTO parentDTO = dtoMap.get(parentId);
+
+                if (parentDTO != null) {
+                    parentDTO.getSubCategories().add(currentDTO);
+                }
+            }
+        }
+
+        // Return only root categories with nested children.
+        return roots;
     }
 
     /**
-     * Returns breadcrumb names for a category up to the root.
-     * e.g., ["Electronics", "Computers", "Gaming Laptops"]
+     * Returns breadcrumb names from root to the selected category.
      */
+    @Transactional(readOnly = true)
     public List<String> getBreadcrumb(Category category) {
+
         List<String> breadcrumb = new ArrayList<>();
+
         Category current = category;
+
         while (current != null) {
             breadcrumb.add(current.getName());
             current = current.getParent();
         }
+
         Collections.reverse(breadcrumb);
+
         return breadcrumb;
     }
 }
