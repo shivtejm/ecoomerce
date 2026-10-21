@@ -31,7 +31,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductDTO> getAllProducts(User currentUser) {
-        return productRepository.findAllWithCategoryAndCreator().stream()
+        return productRepository.findAll().stream()
                 .map(p -> convertToDTO(p, currentUser))
                 .collect(Collectors.toList());
     }
@@ -47,14 +47,14 @@ public class ProductService {
         List<Category> allTargetCategories = new ArrayList<>();
         collectAllDescendants(category, allTargetCategories);
 
-        return productRepository.findByCategoryInWithCategoryAndCreator(allTargetCategories).stream()
+        return productRepository.findByCategoryIn(allTargetCategories).stream()
                 .map(p -> convertToDTO(p, currentUser))
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public ProductDTO getProductById(Long id, User currentUser) {
-        return productRepository.findByIdWithCategoryAndCreator(id)
+        return productRepository.findById(id)
                 .map(p -> convertToDTO(p, currentUser))
                 .orElse(null);
     }

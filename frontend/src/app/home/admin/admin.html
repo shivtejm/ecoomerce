@@ -9,7 +9,7 @@
   <div class="admin-header">
     <div class="header-left">
       <h1>Store Administration Panel</h1>
-      <p>Manage store products, catalog categories, and authorized store administrators.</p>
+      <p>Manage store products and catalog categories.</p>
     </div>
     <div class="admin-badge">
       <span class="shield-icon">
@@ -24,28 +24,8 @@
     </div>
   </div>
 
-  <!-- NAVIGATION TABS -->
-  <div class="admin-tabs">
-    <button
-      class="tab-btn"
-      [class.active]="activeTab === 'products'"
-      (click)="switchTab('products')"
-    >
-      Product Catalog & Inventory
-    </button>
-    <button
-      class="tab-btn"
-      [class.active]="activeTab === 'users'"
-      (click)="switchTab('users')"
-    >
-      Admin & User Access Control
-    </button>
-  </div>
-
-  <!-- ============================================== -->
-  <!-- TAB 1: PRODUCT CATALOG MANAGEMENT              -->
-  <!-- ============================================== -->
-  <div class="tab-content" *ngIf="activeTab === 'products'">
+  <!-- PRODUCT CATALOG MANAGEMENT -->
+  <div class="tab-content">
 
     <!-- PRODUCT CREATION / EDIT FORM -->
     <div class="card form-card">
@@ -64,12 +44,25 @@
 
         <!-- CASCADING CATEGORY SELECTORS (3 TIERS) -->
         <div class="form-full-row">
-          <label class="section-label">Select Category Hierarchy *</label>
+          <div class="cat-header-bar">
+            <label class="section-label">Select Category Hierarchy *</label>
+            <button type="button" class="btn-manage-hierarchy" (click)="openCategoryManagerModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              Manage Hierarchy Tree
+            </button>
+          </div>
+
           <div class="cascade-row">
 
             <!-- 1. Top Level -->
             <div class="cascade-col">
-              <label>1. Top Category</label>
+              <div class="cascade-col-header">
+                <label>1. Top Category</label>
+                <div class="col-actions">
+                  <button type="button" class="btn-mini-add" (click)="quickAddCategory(null, 'Top Level (Root)')" title="Create a new Top-level category">+ New</button>
+                  <button type="button" class="btn-mini-edit" *ngIf="selectedTopId" (click)="quickEditCategory(selectedTopId)" title="Edit selected Top category">✏️</button>
+                </div>
+              </div>
               <select [(ngModel)]="selectedTopId" (change)="onTopCategoryChange()">
                 <option [ngValue]="null">-- Select Top Category --</option>
                 <option *ngFor="let top of categoryTree" [ngValue]="top.id">
@@ -80,7 +73,13 @@
 
             <!-- 2. Parent Level -->
             <div class="cascade-col">
-              <label>2. Parent Subcategory</label>
+              <div class="cascade-col-header">
+                <label>2. Parent Subcategory</label>
+                <div class="col-actions">
+                  <button type="button" class="btn-mini-add" [disabled]="!selectedTopId" (click)="quickAddCategory(selectedTopId, 'Subcategory under selected Top Category')" title="Add Subcategory under current Top Category">+ Add Child</button>
+                  <button type="button" class="btn-mini-edit" *ngIf="selectedParentId" (click)="quickEditCategory(selectedParentId)" title="Edit selected Subcategory">✏️</button>
+                </div>
+              </div>
               <select
                 [(ngModel)]="selectedParentId"
                 (change)="onParentCategoryChange()"
@@ -95,7 +94,13 @@
 
             <!-- 3. Child Level -->
             <div class="cascade-col">
-              <label>3. Child Specific Category</label>
+              <div class="cascade-col-header">
+                <label>3. Child Specific Category</label>
+                <div class="col-actions">
+                  <button type="button" class="btn-mini-add" [disabled]="!selectedParentId" (click)="quickAddCategory(selectedParentId, 'Child Category under selected Subcategory')" title="Add Child Category under current Subcategory">+ Add Child</button>
+                  <button type="button" class="btn-mini-edit" *ngIf="formProduct.categoryId" (click)="quickEditCategory(formProduct.categoryId)" title="Edit selected Child Category">✏️</button>
+                </div>
+              </div>
               <select
                 [(ngModel)]="formProduct.categoryId"
                 [disabled]="!selectedParentId"
@@ -264,70 +269,199 @@
   </div>
 
   <!-- ============================================== -->
-  <!-- TAB 2: MULTI-ADMIN & USER ACCESS MANAGEMENT    -->
+  <!-- FULL CATEGORY HIERARCHY MANAGER MODAL          -->
   <!-- ============================================== -->
-  <div class="tab-content" *ngIf="activeTab === 'users'">
-
-    <div class="card table-card">
-      <div class="table-header">
-        <h2>Admin & Registered User Accounts</h2>
-        <span class="count-badge">{{ users.length }} Registered Accounts</span>
+  <div class="cat-modal-backdrop" *ngIf="showCategoryManager" (click)="closeCategoryManagerModal()">
+    <div class="cat-modal-card" (click)="$event.stopPropagation()">
+      <div class="cat-modal-header">
+        <div class="header-info">
+          <h3>Category Hierarchy Tree Manager</h3>
+          <p>Create, nest, edit, or delete categories at any level of the hierarchy.</p>
+        </div>
+        <button class="btn-close-modal" (click)="closeCategoryManagerModal()">✕</button>
       </div>
 
-      <div class="loading-state" *ngIf="isLoadingUsers">
-        <div class="spinner"></div>
-        <p>Loading accounts...</p>
-      </div>
+      <div class="cat-modal-body">
+        <!-- ADD ROOT LEVEL CATEGORY BAR -->
+        <div class="add-root-box">
+          <span class="box-title">+ Create New Top-Level (Root) Category</span>
+          <div class="inline-add-row">
+            <input
+              type="text"
+              [(ngModel)]="newCatName"
+              placeholder="e.g. Health & Wellness"
+              (keyup.enter)="quickAddCategory(null); submitCreateCategory()"
+            />
+            <button class="btn-add-root" (click)="newCatParentId = null; submitCreateCategory()">
+              + Add Top Category
+            </button>
+          </div>
+          <small class="hint-text">Root categories appear as main department tabs in the store.</small>
+        </div>
 
-      <div class="table-responsive" *ngIf="!isLoadingUsers && users.length > 0">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Access Role</th>
-              <th class="text-right">Privilege Controls</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let user of users">
-              <td>#{{ user.id }}</td>
-              <td><strong>{{ user.name }}</strong></td>
-              <td>{{ user.email }}</td>
-              <td>
-                <span class="role-badge" [class.admin-role]="user.role === 'ROLE_ADMIN'">
-                  {{ user.role === 'ROLE_ADMIN' ? 'Administrator' : 'Customer' }}
+        <div class="cat-error-box" *ngIf="categoryActionError">
+          {{ categoryActionError }}
+        </div>
+
+        <!-- HIERARCHY TREE VIEW -->
+        <div class="hierarchy-tree-container">
+          <div class="tree-empty" *ngIf="categoryTree.length === 0">
+            <p>No categories found in the database. Use the input above to create your first Root category!</p>
+          </div>
+
+          <div class="tree-root-item" *ngFor="let root of categoryTree">
+            <!-- LEVEL 1 (ROOT) -->
+            <div class="tree-node level-1">
+              <div class="node-left">
+                <span class="level-badge l1">L1 Top</span>
+                <strong class="node-name">{{ root.name }}</strong>
+                <span class="sub-count" *ngIf="root.subCategories?.length">
+                  ({{ root.subCategories.length }} subcategories)
                 </span>
-              </td>
-              <td class="text-right actions-cell">
-                <button
-                  *ngIf="user.role !== 'ROLE_ADMIN'"
-                  class="btn-action promote"
-                  (click)="toggleUserRole(user)"
-                >
-                  Promote to Admin
+              </div>
+              <div class="node-actions">
+                <button class="btn-tree-action add" (click)="quickAddCategory(root.id, root.name)">
+                  + Add Subcategory
                 </button>
-
-                <button
-                  *ngIf="user.role === 'ROLE_ADMIN' && user.email !== currentAdminEmail"
-                  class="btn-action demote"
-                  (click)="toggleUserRole(user)"
-                >
-                  Revoke Admin
+                <button class="btn-tree-action edit" (click)="quickEditCategory(root.id)">
+                  ✏️ Rename
                 </button>
+                <button class="btn-tree-action delete" (click)="deleteCategory(root)">
+                  🗑️
+                </button>
+              </div>
+            </div>
 
-                <span *ngIf="user.email === currentAdminEmail" class="self-tag">
-                  (Current Account)
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            <!-- LEVEL 2 (PARENTS) -->
+            <div class="sub-tree level-2-list" *ngIf="root.subCategories?.length">
+              <div class="tree-sub-item" *ngFor="let parent of root.subCategories">
+                <div class="tree-node level-2">
+                  <div class="node-left">
+                    <span class="tree-connector">↳</span>
+                    <span class="level-badge l2">L2 Sub</span>
+                    <span class="node-name">{{ parent.name }}</span>
+                    <span class="sub-count" *ngIf="parent.subCategories?.length">
+                      ({{ parent.subCategories.length }} children)
+                    </span>
+                  </div>
+                  <div class="node-actions">
+                    <button class="btn-tree-action add" (click)="quickAddCategory(parent.id, parent.name)">
+                      + Add Child
+                    </button>
+                    <button class="btn-tree-action edit" (click)="quickEditCategory(parent.id)">
+                      ✏️ Rename
+                    </button>
+                    <button class="btn-tree-action delete" (click)="deleteCategory(parent)">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+
+                <!-- LEVEL 3 (CHILDREN) -->
+                <div class="sub-tree level-3-list" *ngIf="parent.subCategories?.length">
+                  <div class="tree-child-item" *ngFor="let child of parent.subCategories">
+                    <div class="tree-node level-3">
+                      <div class="node-left">
+                        <span class="tree-connector">↳↳</span>
+                        <span class="level-badge l3">L3 Child</span>
+                        <span class="node-name">{{ child.name }}</span>
+                      </div>
+                      <div class="node-actions">
+                        <button class="btn-tree-action edit" (click)="quickEditCategory(child.id)">
+                          ✏️ Rename
+                        </button>
+                        <button class="btn-tree-action delete" (click)="deleteCategory(child)">
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
+      <div class="cat-modal-footer">
+        <button class="btn-modal-done" (click)="closeCategoryManagerModal()">Done</button>
+      </div>
     </div>
+  </div>
 
+  <!-- ============================================== -->
+  <!-- QUICK ADD CATEGORY MODAL                       -->
+  <!-- ============================================== -->
+  <div class="cat-modal-backdrop" *ngIf="showQuickAddModal" (click)="closeQuickAddModal()">
+    <div class="cat-dialog-card" (click)="$event.stopPropagation()">
+      <div class="cat-dialog-header">
+        <h4>{{ newCatParentId ? 'Add Subcategory / Child' : 'Add New Top Category' }}</h4>
+        <button class="btn-close-modal" (click)="closeQuickAddModal()">✕</button>
+      </div>
+
+      <div class="cat-dialog-body">
+        <div class="cat-parent-info" *ngIf="newCatParentId">
+          <small>Parent Category:</small>
+          <strong>{{ newCatParentName }}</strong>
+        </div>
+
+        <div class="cat-error-box" *ngIf="categoryActionError">
+          {{ categoryActionError }}
+        </div>
+
+        <div class="form-group">
+          <label>Category Name *</label>
+          <input
+            type="text"
+            [(ngModel)]="newCatName"
+            placeholder="e.g. Wireless Noise-Cancelling"
+            (keyup.enter)="submitCreateCategory()"
+            autofocus
+          />
+        </div>
+      </div>
+
+      <div class="cat-dialog-footer">
+        <button class="btn-cancel" (click)="closeQuickAddModal()">Cancel</button>
+        <button class="btn-save" (click)="submitCreateCategory()">Save & Select</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- QUICK EDIT CATEGORY MODAL                      -->
+  <!-- ============================================== -->
+  <div class="cat-modal-backdrop" *ngIf="showQuickEditModal" (click)="closeQuickEditModal()">
+    <div class="cat-dialog-card" (click)="$event.stopPropagation()">
+      <div class="cat-dialog-header">
+        <h4>Rename Category</h4>
+        <button class="btn-close-modal" (click)="closeQuickEditModal()">✕</button>
+      </div>
+
+      <div class="cat-dialog-body">
+        <div class="cat-error-box" *ngIf="categoryActionError">
+          {{ categoryActionError }}
+        </div>
+
+        <div class="form-group">
+          <label>Category Name *</label>
+          <input
+            type="text"
+            [(ngModel)]="editCatName"
+            (keyup.enter)="submitUpdateCategory()"
+            autofocus
+          />
+        </div>
+      </div>
+
+      <div class="cat-dialog-footer">
+        <button class="btn-cancel" (click)="closeQuickEditModal()">Cancel</button>
+        <button class="btn-save" (click)="submitUpdateCategory()">Update Name</button>
+      </div>
+    </div>
   </div>
 
 </div>

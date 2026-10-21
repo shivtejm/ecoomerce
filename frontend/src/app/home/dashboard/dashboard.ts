@@ -54,18 +54,7 @@ export class Dashboard implements OnInit, OnDestroy {
   toastMessage: string | null = null;
   loginAlertMessage: string | null = null;
 
-  // Admin Product Creation Modal
-  showAddModal = false;
-  isSavingProduct = false;
-  adminErrorMessage = '';
-  newProduct: Partial<Product> = {
-    name: '',
-    description: '',
-    price: 0,
-    stockQuantity: 10,
-    imageUrl: '',
-    categoryId: undefined
-  };
+
 
   constructor(
     public authService: AuthService,
@@ -267,68 +256,5 @@ export class Dashboard implements OnInit, OnDestroy {
         this.toastMessage = null;
       }
     }, 3000);
-  }
-
-  // Admin Add Product Modal
-  openAddProductModal(): void {
-    this.adminErrorMessage = '';
-    this.newProduct = {
-      name: '',
-      description: '',
-      price: 0,
-      stockQuantity: 10,
-      imageUrl: '',
-      categoryId: this.getAllLeafCategories()[0]?.id
-    };
-    this.showAddModal = true;
-  }
-
-  closeAddProductModal(): void {
-    this.showAddModal = false;
-  }
-
-  getAllLeafCategories(): Category[] {
-    const leaves: Category[] = [];
-    const traverse = (cat: Category) => {
-      if (!cat.subCategories || cat.subCategories.length === 0) {
-        leaves.push(cat);
-      } else {
-        for (const sub of cat.subCategories) {
-          traverse(sub);
-        }
-      }
-    };
-
-    for (const top of this.categoryTree) {
-      traverse(top);
-    }
-    return leaves;
-  }
-
-  submitNewProduct(): void {
-    if (!this.newProduct.name || !this.newProduct.price || !this.newProduct.categoryId) {
-      this.adminErrorMessage = 'Please fill out Product Name, Price, and Category.';
-      return;
-    }
-
-    this.isSavingProduct = true;
-    this.adminErrorMessage = '';
-
-    if (!this.newProduct.imageUrl) {
-      this.newProduct.imageUrl = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80';
-    }
-
-    this.catalogService.addProduct(this.newProduct).subscribe({
-      next: (created) => {
-        this.isSavingProduct = false;
-        this.showAddModal = false;
-        this.showToast(`Admin: Product "${created.name}" created successfully!`);
-        this.loadProducts(this.selectedTabId || undefined);
-      },
-      error: (err) => {
-        this.isSavingProduct = false;
-        this.adminErrorMessage = err.error?.message || 'Failed to add product. Make sure you are logged in as Admin.';
-      }
-    });
   }
 }

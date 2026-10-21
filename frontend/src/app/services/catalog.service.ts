@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Category, Product, AdminUser } from '../models/catalog.model';
+import { Category, Product } from '../models/catalog.model';
 
 @Injectable({
   providedIn: 'root'
@@ -70,21 +70,28 @@ export class CatalogService {
   }
 
   /**
-   * Admin-only: Fetch list of all registered users for multi-admin management.
+   * Creates a new category or subcategory.
    */
-  getAllUsers(): Observable<AdminUser[]> {
-    return this.http.get<AdminUser[]>(`${this.apiUrl}/admin/users`, {
+  createCategory(category: { name: string; slug?: string; parentId?: number | null }): Observable<Category> {
+    return this.http.post<Category>(`${this.apiUrl}/categories`, category, {
       withCredentials: true
     });
   }
 
   /**
-   * Admin-only: Promotes or demotes a user's role.
+   * Updates an existing category (e.g. rename).
    */
-  updateUserRole(userId: number, newRole: string): Observable<any> {
-    const params = new HttpParams().set('newRole', newRole);
-    return this.http.put(`${this.apiUrl}/admin/users/${userId}/role`, null, {
-      params,
+  updateCategory(id: number, category: { name: string; slug?: string }): Observable<Category> {
+    return this.http.put<Category>(`${this.apiUrl}/categories/${id}`, category, {
+      withCredentials: true
+    });
+  }
+
+  /**
+   * Deletes a category.
+   */
+  deleteCategory(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/categories/${id}`, {
       withCredentials: true
     });
   }
