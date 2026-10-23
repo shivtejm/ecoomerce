@@ -37,6 +37,8 @@ public class SecurityConfig {
 
                 .httpBasic(httpBasic -> httpBasic.disable())
 
+                .logout(logout -> logout.disable())
+
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 .sessionManagement(session ->
@@ -53,7 +55,9 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/login", "/register", "/logout", "/forgot-password", "/reset-password", "/validate-reset-token").permitAll()
+                        .requestMatchers(
+                                "/api/login", "/api/register", "/api/logout", "/api/forgot-password", "/api/reset-password", "/api/validate-reset-token"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories", "/api/categories/**", "/api/products", "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/categories", "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/categories", "/api/categories/**").permitAll()
@@ -97,7 +101,14 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:4200", "http://127.0.0.1:4200"));
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:4200",
+                "http://127.0.0.1:4200",
+                "https://*.ngrok-free.dev",
+                "https://*.ngrok-free.app",
+                "https://*.ngrok.io",
+                "http://172.16.*.*:*"
+        ));
 
         configuration.setAllowedMethods(
                 List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")

@@ -25,7 +25,7 @@ export interface ProfileResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080';
+  private apiUrl = '/api';
 
   readonly currentUser = signal<ProfileResponse | null>(this.getStoredUser());
 

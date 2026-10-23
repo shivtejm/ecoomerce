@@ -37,7 +37,7 @@ export interface OrderRecordDTO {
   providedIn: 'root'
 })
 export class PaymentService {
-  private apiUrl = 'http://localhost:8080/api/payment';
+  private apiUrl = '/api/payment';
 
   constructor(private http: HttpClient) {}
 

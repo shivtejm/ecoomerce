@@ -61,6 +61,15 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json",
+            "allowedHosts": [
+              "yearbook-crawling-eternal.ngrok-free.dev",
+              ".ngrok-free.dev",
+              ".ngrok-free.app",
+              "localhost"
+            ]
+          },
           "configurations": {
             "production": {
               "buildTarget": "frontend:build:production"

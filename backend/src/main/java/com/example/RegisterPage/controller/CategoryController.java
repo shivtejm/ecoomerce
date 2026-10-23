@@ -23,29 +23,23 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getCategoryTree());
     }
 
-    /**
-     * POST /api/categories
-     * Creates a new category (root or child).
-     */
+
+    //Creates a new category (root or child).
     @PostMapping
     public ResponseEntity<CategoryDTO> createCategory(@RequestBody CategoryDTO dto) {
         CategoryDTO created = categoryService.createCategory(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    /**
-     * PUT /api/categories/{id}
-     * Updates an existing category (e.g. rename).
-     */
+
+    //Updates an existing category (e.g. rename).
     @PutMapping("/{id}")
     public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id, @RequestBody CategoryDTO dto) {
         return ResponseEntity.ok(categoryService.updateCategory(id, dto));
     }
 
-    /**
-     * DELETE /api/categories/{id}
-     * Deletes a category if it has no associated products.
-     */
+
+    //Deletes a category
     @DeleteMapping("/{id}")
     public ResponseEntity<java.util.Map<String, String>> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);

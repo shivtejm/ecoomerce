@@ -52,7 +52,7 @@ class RegisterPageApplicationTests {
             }
         """.formatted(testEmail);
 
-        mockMvc.perform(post("/register")
+        mockMvc.perform(post("/api/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isCreated())
@@ -72,7 +72,7 @@ class RegisterPageApplicationTests {
             }
         """.formatted(testEmail);
 
-        mockMvc.perform(post("/register")
+        mockMvc.perform(post("/api/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isConflict())
@@ -88,7 +88,7 @@ class RegisterPageApplicationTests {
             }
         """;
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isUnauthorized())
@@ -107,7 +107,7 @@ class RegisterPageApplicationTests {
             }
         """.formatted(testEmail);
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isUnauthorized())
@@ -126,7 +126,7 @@ class RegisterPageApplicationTests {
             }
         """.formatted(testEmail);
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isOk())
@@ -136,7 +136,7 @@ class RegisterPageApplicationTests {
 
     @Test
     void testLogoutClearsCookie() throws Exception {
-        mockMvc.perform(post("/logout"))
+        mockMvc.perform(post("/api/logout"))
                 .andExpect(status().isOk())
                 .andExpect(cookie().maxAge("JWT", 0))
                 .andExpect(jsonPath("$.message").value("Logged out successfully"));

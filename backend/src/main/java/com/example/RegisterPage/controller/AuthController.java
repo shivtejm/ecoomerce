@@ -26,12 +26,15 @@ public class AuthController {
     private final AuthService authService;
     private final JwtService jwtService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:4200}")
+    private String frontendBaseUrl;
+
     public AuthController(AuthService authService, JwtService jwtService) {
         this.authService = authService;
         this.jwtService = jwtService;
     }
 
-    @PostMapping("/register")
+    @PostMapping("/api/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         String result = authService.register(request);
 
@@ -44,7 +47,7 @@ public class AuthController {
                 .body(Map.of("message", "Registration successful"));
     }
 
-    @PostMapping("/login")
+    @PostMapping("/api/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
                                    HttpServletResponse response) {
 
@@ -78,7 +81,7 @@ public class AuthController {
         ));
     }
 
-    @PostMapping("/logout")
+    @PostMapping("/api/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from("JWT", "")
                 .httpOnly(true)
@@ -92,7 +95,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
-    @GetMapping("/profile")
+    @GetMapping("/api/profile")
     public ResponseEntity<?> getProfile(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -109,18 +112,20 @@ public class AuthController {
         ));
     }
 
-    @PostMapping("/forgot-password")
+    @PostMapping("/api/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request,
                                            @RequestHeader(value = "Origin", required = false) String origin) {
-        String frontendUrl = (origin != null && !origin.isBlank()) ? origin : "http://localhost:4200";
+        String frontendUrl = (frontendBaseUrl != null && !frontendBaseUrl.isBlank())
+                ? frontendBaseUrl
+                : ((origin != null && !origin.isBlank()) ? origin : "http://localhost:4200");
         authService.processForgotPassword(request.getEmail(), frontendUrl);
         return ResponseEntity.ok(Map.of(
                 "message", "If an account exists with that email, a password reset link has been sent."
         ));
     }
 
-    @GetMapping("/validate-reset-token")
-    public ResponseEntity<?> validateResetToken(@RequestParam("token") String token) {
+    @GetMapping("/api/validate-reset-token")
+    public ResponseEntity<?> validateResetToken(@RequestParam("token") String  token) {
         boolean valid = authService.validateResetToken(token);
         if (valid) {
             return ResponseEntity.ok(Map.of("valid", true, "message", "Token is valid"));
@@ -130,7 +135,7 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/reset-password")
+    @PostMapping("/api/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         String result = authService.resetPassword(request.getToken(), request.getNewPassword());
         if ("Password successfully reset".equals(result)) {

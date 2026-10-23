@@ -153,7 +153,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // Invalidate the token so it cannot be reused
+        // Invalidate the tok   en so it cannot be reused
         resetToken.setUsed(true);
         passwordResetTokenRepository.save(resetToken);
 
